@@ -1,0 +1,11 @@
+{
+  "author": "martbln",
+  "github_id": "martbln",
+  "name": "Differential Transformer 7x512 SP-1024",
+  "blurb": "Replaces standard GQA with Differential Attention (Ye et al. 2024): two Q/K streams share one V, output is SDPA(Q1,K1,V) - lambda*SDPA(Q2,K2,V). Per-head learnable lambda via sigmoid. SubLN applied head-wise before output projection. num_layers reduced 9->7 to offset the extra Q/K params, net ~16.1M params. Results pending training run.",
+  "date": "2026-03-18T00:00:00Z",
+  "val_loss": null,
+  "val_bpb": null,
+  "bytes_total": null,
+  "bytes_code": null
+}
