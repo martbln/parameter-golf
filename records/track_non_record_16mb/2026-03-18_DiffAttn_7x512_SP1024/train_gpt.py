@@ -621,6 +621,7 @@ class DifferentialCausalSelfAttention(nn.Module):
 
         # Shared QK gain (same role as in baseline, applied to both streams).
         self.q_gain = nn.Parameter(torch.full((num_heads,), qk_gain_init, dtype=torch.float32))
+        self.subln_scale = nn.Parameter(torch.ones(num_heads, dtype=torch.float32))
         self.rotary = Rotary(self.head_dim, base=rope_base)
 
     def forward(self, x: Tensor) -> Tensor:
@@ -661,6 +662,7 @@ class DifferentialCausalSelfAttention(nn.Module):
         # Per-head RMSNorm before the output projection (SubLN from the paper).
         y = y.transpose(1, 2).reshape(B * L, H, hd)
         y = F.rms_norm(y, (hd,))
+        y = y * self.subln_scale.to(dtype=y.dtype)[None, :, None]
         y = y.reshape(B, L, D)
 
         return self.proj(y)
