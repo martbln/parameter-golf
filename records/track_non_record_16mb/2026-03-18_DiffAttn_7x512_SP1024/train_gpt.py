@@ -759,6 +759,13 @@ class GPT(nn.Module):
         for module in self.modules():
             if isinstance(module, nn.Linear) and getattr(module, "_zero_init", False):
                 nn.init.zeros_(module.weight)
+        # Per-layer lambda initialization following DiffAttn paper (λ_i = 0.8 - 0.6*exp(-0.3*(i))).
+        # Earlier layers start with lower λ (stronger differential cancellation of noise),
+        # later layers with higher λ (weaker cancellation for abstract feature blending).
+        for i, block in enumerate(self.blocks):
+            lambda_init = 0.8 - 0.6 * math.exp(-0.3 * i)
+            logit_init = math.log(lambda_init / (1.0 - lambda_init))
+            nn.init.constant_(block.attn.lambda_param, logit_init)
 
     def forward(self, input_ids: Tensor, target_ids: Tensor) -> Tensor:
         x = self.tok_emb(input_ids)
