@@ -747,6 +747,7 @@ class GPT(nn.Module):
                 for i in range(num_layers)
             ]
         )
+        self.input_norm = nn.RMSNorm(model_dim)
         self.final_norm = nn.RMSNorm(model_dim)
         self.lm_head = None if tie_embeddings else CastedLinear(model_dim, vocab_size, bias=False)
         if self.lm_head is not None:
@@ -769,7 +770,7 @@ class GPT(nn.Module):
 
     def forward(self, input_ids: Tensor, target_ids: Tensor) -> Tensor:
         x = self.tok_emb(input_ids)
-        x = F.rms_norm(x, (x.size(-1),))
+        x = self.input_norm(x)
         x0 = x
         skips: list[Tensor] = []
 
@@ -932,6 +933,7 @@ def main() -> None:
     if base_model.skip_weights.numel() > 0:
         scalar_params.append(base_model.skip_weights)
     scalar_params.extend(base_model.final_norm.parameters())
+    scalar_params.extend(base_model.input_norm.parameters())
     token_lr = args.tied_embed_lr if args.tie_embeddings else args.embed_lr
     optimizer_tok = torch.optim.Adam(
         [{"params": [base_model.tok_emb.weight], "lr": token_lr, "base_lr": token_lr}],
