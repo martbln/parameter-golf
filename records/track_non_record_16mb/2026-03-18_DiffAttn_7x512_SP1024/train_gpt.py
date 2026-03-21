@@ -766,10 +766,14 @@ class GPT(nn.Module):
         # Per-layer lambda initialization following DiffAttn paper (λ_i = 0.8 - 0.6*exp(-0.3*(i))).
         # Earlier layers start with lower λ (stronger differential cancellation of noise),
         # later layers with higher λ (weaker cancellation for abstract feature blending).
+        n = len(self.blocks)
         for i, block in enumerate(self.blocks):
             lambda_init = 0.8 - 0.6 * math.exp(-0.3 * i)
             logit_init = math.log(lambda_init / (1.0 - lambda_init))
             nn.init.constant_(block.attn.lambda_param, logit_init)
+            # Per-layer q_gain: ramp from 1.5 (early) to 2.5 (late), spanning default 2.0.
+            q_gain_i = 1.5 + i * (1.0 / max(n - 1, 1))
+            nn.init.constant_(block.attn.q_gain, q_gain_i)
 
     def forward(self, input_ids: Tensor, target_ids: Tensor) -> Tensor:
         x = self.tok_emb(input_ids)
