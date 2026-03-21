@@ -615,8 +615,9 @@ class DifferentialCausalSelfAttention(nn.Module):
         self.proj._zero_init = True
 
         # λ per head: sigmoid(lambda_param) ∈ (0, 1). Kept fp32 via CONTROL_TENSOR_NAME_PATTERNS.
-        # Init to 0 → sigmoid(0) = 0.5, so the two streams start balanced.
-        self.lambda_param = nn.Parameter(torch.zeros(num_heads, dtype=torch.float32))
+        # Init to -0.5 → sigmoid(-0.5) ≈ 0.378, starting with weaker differential subtraction
+        # so each stream establishes good attention patterns before cancellation dominates.
+        self.lambda_param = nn.Parameter(torch.full((num_heads,), -0.5, dtype=torch.float32))
 
         # Shared QK gain (same role as in baseline, applied to both streams).
         self.q_gain = nn.Parameter(torch.full((num_heads,), qk_gain_init, dtype=torch.float32))
