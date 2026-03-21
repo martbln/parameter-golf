@@ -691,8 +691,8 @@ class Block(nn.Module):
         qk_gain_init: float,
     ):
         super().__init__()
-        self.attn_norm = RMSNorm()
-        self.mlp_norm = RMSNorm()
+        self.attn_norm = nn.RMSNorm(dim)
+        self.mlp_norm = nn.RMSNorm(dim)
         self.attn = DifferentialCausalSelfAttention(dim, num_heads, num_kv_heads, rope_base, qk_gain_init)
         self.mlp = MLP(dim, mlp_mult)
         self.attn_scale = nn.Parameter(torch.ones(dim, dtype=torch.float32))
